@@ -8,7 +8,7 @@ DROP TABLE STATIONS_OTDELENIES;
 DROP TABLE OTDELENIES;
 DROP TABLE ROADS;
 DROP TABLE SCHEDULE;
-
+DROP TABLE EMPTY_WAGONS;
  
 CREATE TABLE CARS (
     car_type_id INT NOT NULL,
@@ -95,23 +95,40 @@ ALTER TABLE STATIONS_ROADS ADD FOREIGN KEY (station_id) REFERENCES STATIONS(stat
 ALTER TABLE ORDERS ADD FOREIGN KEY (car_type) REFERENCES CARS(car_type_id);
 
 
-\COPY CARS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\CARS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY DISLOCATION FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\DISLOCATON.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ORDERS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ORDERS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ROUTERS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ROUTERS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS_ROADS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS_ROADS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS_OTDELENIES FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS_OTDELENIES.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY OTDELENIES FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\OTDELENIES.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ROADS FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ROADS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY SCHEDULE FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\SCHEDULE.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY CARS                  FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\CARS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY DISLOCATION           FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\DISLOCATON.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ORDERS                FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ORDERS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ROUTERS               FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ROUTERS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS              FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS_ROADS        FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS_ROADS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS_OTDELENIES   FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\STATIONS_OTDELENIES.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY OTDELENIES            FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\OTDELENIES.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ROADS                 FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\ROADS.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY SCHEDULE              FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\SCHEDULE.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 
 
-ALTER TABLE STATIONS ALTER COLUMN station_id TYPE TEXT;
-SELECT * FROM STATIONS WHERE LEFT(station_id, 1) = RIGHT(station_id, 1);
+--SELECT * FROM STATIONS WHERE LEFT(CAST(station_id AS TEXT), 1) = RIGHT(CAST(station_id AS TEXT), 1);
+--SELECT * FROM STATIONS WHERE char_length(CAST(station_name AS TEXT)) > 8 AND LOWER(CAST(station_name AS TEXT)) LIKE '%о%о%';
+--
+--SELECT DISTINCT station_id, car_type, wait_time  FROM DISLOCATION ORDER BY wait_time;
+--SELECT order_id, revenue_per_car, car_required, NKO_loaded_run_unload FROM ORDERS WHERE car_required > 20 AND car_required < 30 OR car_required = 71 OR car_required = 20;
+--SELECT COUNT(*) FROM STATIONS WHERE max is NULL OR min is NULL OR wait_cost is NULL OR station_name is NULL OR station_id is NULL;
 
-ALTER TABLE STATIONS ALTER COLUMN station_name TYPE TEXT;
-SELECT * FROM STATIONS WHERE chr_length(station_name) > 8 AND LOWER(station_name) LIKE '%о%о%';
-SELECT DISTINCT station_id, car_type, wait_time  FROM DISLOCATION ORDER BY wait_time;
-SELECT order_id, revenue_per_car, car_required, NKO_loaded_run_unload FROM ORDERS WHERE car_required > 20 AND car_required < 30 OR car_required = 71 OR car_required = 20;
-SELECT COUNT(*) AS LINE FROM STATIONS WHERE max is NULL OR min is NULL OR wait_cost is NULL OR station_name is NULL OR station_id is NULL;
+--SELECT * FROM DISLOCATION WHERE id = 666; 
+--DELETE FROM DISLOCATION WHERE id = 666;
+--SELECT * FROM DISLOCATION WHERE id = 666; 
+--
+--INSERT INTO DISLOCATION VALUES 
+--(971201,0,1,1,1,7), 
+--(921202,2,1,1,1,6),
+--(843408,1,1,1,1,6),
+--(43408,1,1,1,1,6);
+--
+--CREATE TABLE EMPTY_WAGONS (
+--    id_station INT NOT NULL,
+--    period     INT NOT NULL,
+--    wait_time  INT NOT NULL,
+--    car_type   INT NOT NULL
+--);
+--
+--UPDATE STATIONS SET wait_cost = wait_cost + wait_cost * 0.02 WHERE min > 0; 
