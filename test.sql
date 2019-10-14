@@ -107,28 +107,38 @@ ALTER TABLE ORDERS ADD FOREIGN KEY (car_type) REFERENCES CARS(car_type_id);
 \COPY SCHEDULE              FROM 'C:\\Users\\gusei\\Source\\SQL\\DataBase\\SCHEDULE.csv' DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 
 
---SELECT * FROM STATIONS WHERE LEFT(CAST(station_id AS TEXT), 1) = RIGHT(CAST(station_id AS TEXT), 1);
---SELECT * FROM STATIONS WHERE char_length(CAST(station_name AS TEXT)) > 8 AND LOWER(CAST(station_name AS TEXT)) LIKE '%о%о%';
---
---SELECT DISTINCT station_id, car_type, wait_time  FROM DISLOCATION ORDER BY wait_time;
---SELECT order_id, revenue_per_car, car_required, NKO_loaded_run_unload FROM ORDERS WHERE car_required > 20 AND car_required < 30 OR car_required = 71 OR car_required = 20;
---SELECT COUNT(*) FROM STATIONS WHERE STATIONS.* is NULL;
+SELECT * FROM STATIONS WHERE LEFT(CAST(station_id as VARCHAR(100)), 1) = RIGHT(CAST(station_id as VARCHAR(100)), 1);
+ALTER TABLE STATIONS ALTER COLUMN station_name TYPE TEXT;
+SELECT * FROM STATIONS WHERE char_length(station_name) > 8 AND LOWER(station_name) LIKE '%о%о%';
+SELECT DISTINCT station_id, car_type, wait_time  FROM DISLOCATION ORDER BY wait_time;
 
---SELECT * FROM DISLOCATION WHERE id = 666; 
---DELETE FROM DISLOCATION WHERE id = 666;
---SELECT * FROM DISLOCATION WHERE id = 666; 
---
+SELECT order_id ,revenue_per_car, car_required, NKO_loaded_run_unload FROM ORDERS WHERE car_required BETWEEN 20 AND 30 OR car_required=71 OR car_required=20;
+
+SELECT * FROM ROUTERS, STATIONS WHERE ROUTERS.station_from=STATIONS.station_id AND STATIONS.station_name='Бирюсинск' AND ROUTERS.Avg_cost>=7000 LIMIT 7 ;
+SELECT order_id FROM ORDERS WHERE  must_do  IS NULL;
+SELECT * FROM STATIONS WHERE STATIONS.* IS NULL;
+DELETE FROM DISLOCATION WHERE id=666;
 INSERT INTO DISLOCATION VALUES 
-((SELECT MAX(id) + 1 FROM DISLOCATION), 971201, 0, 1, 1, 1, 7), 
-((SELECT MAX(id) + 2 FROM DISLOCATION), 921202, 2, 1, 1, 1, 6),
-((SELECT MAX(id) + 3 FROM DISLOCATION), 843408, 1, 1, 1, 1, 6),
-((SELECT MAX(id) + 4 FROM DISLOCATION), 43408, 1, 1, 1, 1, 6);
 
---CREATE TABLE CAR (
---    id_station INT NOT NULL,
---    period     INT NOT NULL,
---    wait_time  INT NOT NULL,
---    car_type   INT NOT NULL
---);
---
---UPDATE STATIONS SET wait_cost = wait_cost + wait_cost * 0.02 WHERE min > 0; 
+((SELECT MAX(id)+1 FROM DISLOCATION),971201,0,1,1,1,7), 
+((SELECT MAX(id)+2 FROM DISLOCATION),921202,2,1,1,1,6), 
+((SELECT MAX(id)+3 FROM DISLOCATION),843408,1,1,1,1,6), 
+((SELECT MAX(id)+4 FROM DISLOCATION),843408,1,1,1,1,6);
+SELECT * FROM DISLOCATION;
+
+
+CREATE TABLE EMPTY_CARS (
+	
+	cars_quantity INT NOT NULL,
+	car_type INT NOT NULL,
+	wait_time INT NOT NULL,
+	period INT NOT NULL,
+	station_id INT NOT NULL
+	);
+
+
+
+INSERT INTO EMPTY_CARS(cars_quantity,car_type,wait_time, period,station_id) SELECT cars_quantity,car_type,wait_time, period, station_id FROM DISLOCATION WHERE loaded_empty=0;
+SELECT * FROM EMPTY_CARS;
+SELECT car_type, station_id, period FROM EMPTY_CARS GROUP BY car_type, station_id, period HAVING COUNT(*)>1;
+ UPDATE STATIONS SET wait_cost = wait_cost + wait_cost * 0.02 WHERE min > 0; 
