@@ -1,18 +1,18 @@
-﻿DROP TABLE CARS CASCADE;
-DROP TABLE DISLOCATION;
-DROP TABLE ORDERS;
+﻿DROP TABLE CARS                 CASCADE;
+DROP TABLE DISLOCATION          CASCADE;
+DROP TABLE ORDERS               CASCADE;
 DROP TABLE ROUTERS;
-DROP TABLE STATIONS CASCADE;
-DROP TABLE STATIONS_ROADS;
+DROP TABLE STATIONS             CASCADE;
+DROP TABLE STATIONS_ROADS       CASCADE;
 DROP TABLE STATIONS_OTDELENIES;
 DROP TABLE OTDELENIES;
 DROP TABLE ROADS;
-DROP TABLE SCHEDULE;
-DROP TABLE EMPTY_WAGONS;
- 
+DROP TABLE SCHEDULE             CASCADE;
+DROP TABLE EMPTY_CARS;
+
 CREATE TABLE CARS (
     car_type_id                 INT NOT NULL,
-    car_type_name               VARCHAR(100)
+    car_type_name               VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE DISLOCATION (
@@ -56,18 +56,18 @@ CREATE TABLE STATIONS (
 
 CREATE TABLE STATIONS_ROADS (
     station_id                  INT NOT NULL,
-    otdelenie_id                INT NOT NULL
+    station_road_id             INT NOT NULL
 );
 
 CREATE TABLE STATIONS_OTDELENIES (
-    otdelenie_id                INT NOT NULL,
-    station_otdelenie           VARCHAR(100) NOT NULL
+    station_id                 INT NOT NULL,
+    otdelenie_id               INT NOT NULL
 
 );
 
 CREATE TABLE OTDELENIES (
     otdelenie_id                INT NOT NULL,
-    station_road                VARCHAR(100) NOT NULL
+    station_otdelenie           VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE ROADS (
@@ -81,22 +81,6 @@ CREATE TABLE SCHEDULE (
     Sum_cars_quatity            INT NOT NULL
 );
 
-
---KEY-
-ALTER TABLE STATIONS        ADD PRIMARY KEY (station_id);
-ALTER TABLE DISLOCATION     ADD PRIMARY KEY (id);
-ALTER TABLE ORDERS          ADD PRIMARY KEY (order_id);
-ALTER TABLE CARS            ADD PRIMARY KEY (car_type_id);
-ALTER TABLE OTDELENIES      ADD PRIMARY KEY (otdelenie_id);
-
---FOREIGN KEY 
-ALTER TABLE DISLOCATION     ADD FOREIGN KEY (car_type)      REFERENCES CARS(car_type_id);
-ALTER TABLE ORDERS          ADD FOREIGN KEY (car_type)      REFERENCES CARS(car_type_id);
-ALTER TABLE STATIONS_ROADS  ADD FOREIGN KEY (station_id)    REFERENCES STATIONS(station_id);
-ALTER TABLE SCHEDULE        ADD FOREIGN KEY (order_id)      REFERENCES ORDERS(order_id);
-ALTER TABLE STATIONS_ROADS  ADD FOREIGN KEY (otdelenie_id)  REFERENCES OTDELENIES(otdelenie_id);
-
-
 \COPY CARS                  FROM 'DataBase/CARS.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY DISLOCATION           FROM 'DataBase/DISLOCATON.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY ORDERS                FROM 'DataBase/ORDERS.csv'                  DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
@@ -107,6 +91,29 @@ ALTER TABLE STATIONS_ROADS  ADD FOREIGN KEY (otdelenie_id)  REFERENCES OTDELENIE
 \COPY OTDELENIES            FROM 'DataBase/OTDELENIES.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY ROADS                 FROM 'DataBase/ROADS.csv'                   DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY SCHEDULE              FROM 'DataBase/SCHEDULE.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+
+--PRIMARY KEYS
+ALTER TABLE STATIONS            ADD PRIMARY KEY (station_id);
+ALTER TABLE DISLOCATION         ADD PRIMARY KEY (id);
+ALTER TABLE ORDERS              ADD PRIMARY KEY (order_id);
+ALTER TABLE CARS                ADD PRIMARY KEY (car_type_id);
+ALTER TABLE OTDELENIES          ADD PRIMARY KEY (otdelenie_id);
+ALTER TABLE ROUTERS             ADD PRIMARY KEY (route_id);
+ALTER TABLE STATIONS_OTDELENIES ADD PRIMARY KEY (station_id);
+ALTER TABLE ROADS               ADD PRIMARY KEY (station_road_id);
+ALTER TABLE SCHEDULE            ADD PRIMARY KEY (order_id, period);
+
+--FOREIGN KEY 
+ALTER TABLE DISLOCATION         ADD FOREIGN KEY (car_type)          REFERENCES CARS(car_type_id);
+ALTER TABLE DISLOCATION         ADD FOREIGN KEY (station_id)        REFERENCES STATIONS(station_id);
+ALTER TABLE ORDERS              ADD FOREIGN KEY (car_type)          REFERENCES CARS(car_type_id);
+ALTER TABLE ORDERS              ADD FOREIGN KEY (station_from)      REFERENCES STATIONS(station_id);
+ALTER TABLE ORDERS              ADD FOREIGN KEY (station_to)        REFERENCES STATIONS(station_id);
+ALTER TABLE SCHEDULE            ADD FOREIGN KEY (order_id)          REFERENCES ORDERS(order_id);
+ALTER TABLE STATIONS_ROADS      ADD FOREIGN KEY (station_id)        REFERENCES STATIONS(station_id);
+ALTER TABLE STATIONS_ROADS      ADD FOREIGN KEY (station_road_id)   REFERENCES ROADS(station_road_id);
+ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (station_id)        REFERENCES STATIONS(station_id);
+ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES OTDELENIES(otdelenie_id);
 
 
 --Ex1
@@ -141,14 +148,14 @@ ALTER TABLE STATIONS_ROADS  ADD FOREIGN KEY (otdelenie_id)  REFERENCES OTDELENIE
 --SELECT * FROM DISLOCATION;
 --
 --
---CREATE TABLE EMPTY_CARS (
---	
---	cars_quantity INT NOT NULL,
---	car_type INT NOT NULL,
---	wait_time INT NOT NULL,
---	period INT NOT NULL,
---	station_id INT NOT NULL
---	);
+CREATE TABLE EMPTY_CARS (
+	
+	cars_quantity INT NOT NULL,
+	car_type INT NOT NULL,
+	wait_time INT NOT NULL,
+	period INT NOT NULL,
+	station_id INT NOT NULL
+);
 --
 --INSERT INTO EMPTY_CARS(cars_quantity,car_type,wait_time, period,station_id) SELECT cars_quantity,car_type,wait_time, period, station_id FROM DISLOCATION WHERE loaded_empty=0;
 --SELECT * FROM EMPTY_CARS;
@@ -156,6 +163,3 @@ ALTER TABLE STATIONS_ROADS  ADD FOREIGN KEY (otdelenie_id)  REFERENCES OTDELENIE
 
 --Ex9
 --UPDATE STATIONS SET wait_cost = wait_cost + wait_cost * 0.02 WHERE min > 0; 
-
-
---stations_otdelenies.csv statoins_roads.csv
