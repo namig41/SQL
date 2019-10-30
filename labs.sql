@@ -220,12 +220,12 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --WHERE STATIONS_FROM.station_from is NULL;
 
 --EX5
---SELECT station_name
+--SELECT station_name, STATIONS_TO.Avg_cost
 --FROM 
 --STATIONS AS STATIONS_UNIQUE
 --INNER JOIN
 --(
---    SELECT station_to FROM ROUTERS WHERE Avg_cost > 7700
+--    SELECT station_to, Avg_cost FROM ROUTERS WHERE Avg_cost > 7700
 --) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to;
 
 -- Ex6
