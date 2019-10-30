@@ -10,6 +10,7 @@ DROP TABLE OTDELENIES;
 DROP TABLE ROADS;
 DROP TABLE SCHEDULE             CASCADE;
 DROP TABLE EMPTY_CARS;
+DROP TABLE BIG;
 
 CREATE TABLE CARS (
     car_type_id                 INT NOT NULL,
@@ -169,61 +170,90 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --LAB 2
 
 --Ex 1
---SELECT a.station_name, a.wait_cost
+--SELECT
+--STATIONS_MAX.station_name, STATIONS_MAX.wait_cost max_cost,
+--STATIONS_MIN.station_name, STATIONS_MIN.wait_cost min_cost
 --FROM 
---    STATIONS AS a
+--    STATIONS AS STATIONS_MAX
 --    INNER JOIN
 --    (
 --        SELECT MAX(wait_cost) max_wait_cost FROM STATIONS
---    ) AS b ON a.wait_cost = b.max_wait_cost;
-
---SELECT a.station_name, a.wait_cost
---FROM 
---    STATIONS AS a
+--    ) AS MAX_COST ON STATIONS_MAX.wait_cost = MAX_COST.max_wait_cost
+--FULL OUTER JOIN
+--(
+--    STATIONS AS STATIONS_MIN
 --    INNER JOIN
 --    (
 --        SELECT MIN(wait_cost) min_wait_cost FROM STATIONS
---    ) AS b ON a.wait_cost = b.min_wait_cost;
+--    ) AS MIN_COST ON STATIONS_MIN.wait_cost = MIN_COST.min_wait_cost
+--) AS STATIONS_MIN ON STATIONS_MIN.station_name = STATIONS_MAX.station_name;
 
 --Ex2
-
 --SELECT GET_LOADED_WAGON.station_id, GET_LOADED_WAGON.period,
 --GET_LOADED_WAGON.cars_quantity loaded_wagon, GET_UNLOADED_WAGON.cars_quantity unloaded_wagon,
 --GET_UNLOADED_WAGON.cars_quantity + GET_LOADED_WAGON.cars_quantity sum_cars_quatity
---FROM DISLOCATION AS GET_LOADED_WAGON 
---LEFT JOIN
---(
---    SELECT cars_quantity, id, loaded_empty FROM DISLOCATION
---) AS GET_UNLOADED_WAGON ON GET_UNLOADED_WAGON.id = GET_LOADED_WAGON.id
+--FROM DISLOCATION AS GET_LOADED_WAGON
 --INNER JOIN
 --(
---    SELECT GET_LOADED.loaded_empty loaded, GET_UNLOADED.loaded_empty unloaded
---    FROM DISLOCATION AS GET_LOADED
---    LEFT JOIN
+--    SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 1
+--) AS GET_LOADED ON GET_LOADED_WAGON.loaded_empty = GET_LOADED.loaded_empty
+--LEFT JOIN
+--(
+--    SELECT GET_WAGON.cars_quantity, GET_WAGON.loaded_empty, GET_WAGON.id FROM DISLOCATION AS GET_WAGON
+--    INNER JOIN
 --    (
---        SELECT loaded_empty, id FROM DISLOCATION WHERE loaded_empty = 0 ) AS GET_UNLOADED ON GET_LOADED.id != GET_UNLOADED.id --id
---    WHERE GET_LOADED.loaded_empty = 1
---) AS GET_LOADED_EMPTY
---ON GET_LOADED_WAGON.loaded_empty = GET_LOADED_EMPTY.loaded
-----AND GET_UNLOADED_WAGON.loaded_empty =  GET_LOADED_EMPTY.unloaded
---WHERE CAST(GET_LOADED_WAGON.station_id AS TEXT) LIKE '%0%0';
+--        SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 0
+--    ) AS GET_UNLOADED ON GET_WAGON.loaded_empty = GET_UNLOADED.loaded_empty
+--) AS GET_UNLOADED_WAGON ON GET_LOADED_WAGON.id != GET_UNLOADED_WAGON.id
+--WHERE CAST(GET_LOADED_WAGON.station_id AS TEXT) LIKE '%0%0'
+--ORDER BY GET_LOADED_WAGON.wait_time DESC
+--LIMIT 10;
 
-SELECT GET_LOADED_WAGON.station_id, GET_LOADED_WAGON.period,
-GET_LOADED_WAGON.cars_quantity loaded_wagon, GET_UNLOADED_WAGON.cars_quantity unloaded_wagon,
-GET_UNLOADED_WAGON.cars_quantity + GET_LOADED_WAGON.cars_quantity sum_cars_quatity
-FROM DISLOCATION AS GET_LOADED_WAGON
-INNER JOIN
-(
-    SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 1
-) AS GET_LOADED ON GET_LOADED_WAGON.loaded_empty = GET_LOADED.loaded_empty
-LEFT JOIN
-(
-    SELECT GET_WAGON.cars_quantity, GET_WAGON.loaded_empty, GET_WAGON.id FROM DISLOCATION AS GET_WAGON
-    INNER JOIN
-    (
-        SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 0
-    ) AS GET_UNLOADED ON GET_WAGON.loaded_empty = GET_UNLOADED.loaded_empty
-) AS GET_UNLOADED_WAGON ON GET_LOADED_WAGON.id != GET_UNLOADED_WAGON.id
-WHERE CAST(GET_LOADED_WAGON.station_id AS TEXT) LIKE '%0%0'
-ORDER BY GET_LOADED_WAGON.wait_time DESC
-LIMIT 10;
+--Ex4
+--SELECT station_name
+--FROM 
+--STATIONS AS STATIONS_UNIQUE
+--INNER JOIN
+--(
+--    SELECT station_from FROM ROUTERS
+--) AS STATIONS_FROM ON STATIONS_UNIQUE.station_id = STATIONS_FROM.station_from;
+
+--EX5
+--SELECT station_name
+--FROM 
+--STATIONS AS STATIONS_UNIQUE
+--INNER JOIN
+--(
+--    SELECT station_to FROM ROUTERS WHERE Avg_cost > 7700
+--) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to;
+
+-- Ex6
+--SELECT STATIONS_FROM.station_name || ' to ' || STATIONS_TO.station_name flights
+--FROM
+--STATIONS AS STATIONS_FROM
+--INNER JOIN
+--(
+--    SELECT station_from FROM ROUTERS
+--    INNER JOIN
+--    (
+--        SELECT station_id FROM DISLOCATION WHERE period > 10 AND period < 41
+--    ) AS _PERIOD ON (ROUTERS.station_from = _PERIOD.station_id)
+--) AS _FROM ON _FROM.station_from = STATIONS_FROM.station_id,
+--STATIONS AS STATIONS_TO
+--INNER JOIN
+--(
+--    SELECT station_to FROM ROUTERS
+--    INNER JOIN
+--    (
+--        SELECT station_id FROM DISLOCATION WHERE period > 10 AND period < 41
+--    ) AS _PERIOD ON (ROUTERS.station_from = _PERIOD.station_id)
+--) AS _TO ON _TO.station_to = STATIONS_TO.station_id LIMIT 5;
+
+--Ex7
+--CREATE TABLE BIG (
+--    count INT NOT NULL
+--);
+--
+--\COPY BIG                  FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+--ALTER TABLE BIG ADD PRIMARY KEY (count);
+--CREATE INDEX ON BIG (count) WITH ();
