@@ -223,10 +223,11 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --SELECT station_name, STATIONS_TO.Avg_cost
 --FROM 
 --STATIONS AS STATIONS_UNIQUE
---INNER JOIN
+--LEFT JOIN
 --(
 --    SELECT station_to, Avg_cost FROM ROUTERS WHERE Avg_cost > 7700
---) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to;
+--) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to
+--WHERE STATIONS_TO.station_to IS NOT NULL;
 
 -- Ex6
 --SELECT STATIONS_FROM.station_name || ' to ' || STATIONS_TO.station_name flights
