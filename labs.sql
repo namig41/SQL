@@ -1,16 +1,16 @@
-﻿--START
-DROP TABLE CARS                 CASCADE;
-DROP TABLE DISLOCATION          CASCADE;
-DROP TABLE ORDERS               CASCADE;
-DROP TABLE ROUTERS;
-DROP TABLE STATIONS             CASCADE;
-DROP TABLE STATIONS_ROADS       CASCADE;
-DROP TABLE STATIONS_OTDELENIES;
-DROP TABLE OTDELENIES;
-DROP TABLE ROADS;
-DROP TABLE SCHEDULE             CASCADE;
-DROP TABLE EMPTY_CARS;
-DROP TABLE BIG;
+﻿DROP TABLE IF EXISTS CARS                 CASCADE;
+DROP TABLE IF EXISTS DISLOCATION          CASCADE;
+DROP TABLE IF EXISTS ORDERS               CASCADE;
+DROP TABLE IF EXISTS ROUTERS;
+DROP TABLE IF EXISTS STATIONS             CASCADE;
+DROP TABLE IF EXISTS STATIONS_ROADS       CASCADE;
+DROP TABLE IF EXISTS STATIONS_OTDELENIES;
+DROP TABLE IF EXISTS OTDELENIES;
+DROP TABLE IF EXISTS ROADS;
+DROP TABLE IF EXISTS SCHEDULE             CASCADE;
+DROP TABLE IF EXISTS EMPTY_CARS;
+DROP TABLE IF EXISTS BIG1;
+DROP TABLE IF EXISTS BIG2;
 
 CREATE TABLE CARS (
     car_type_id                 INT NOT NULL,
@@ -91,16 +91,16 @@ CREATE TABLE EMPTY_CARS (
 	station_id                  INT NOT NULL
 );
 
-\COPY CARS                  FROM 'DataBase/CARS.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY DISLOCATION           FROM 'DataBase/DISLOCATON.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ORDERS                FROM 'DataBase/ORDERS.csv'                  DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ROUTERS               FROM 'DataBase/ROUTERS.csv'                 DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS              FROM 'DataBase/STATIONS.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS_ROADS        FROM 'DataBase/STATIONS_ROADS.csv'          DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY STATIONS_OTDELENIES   FROM 'DataBase/STATIONS_OTDELENIES.csv'     DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY OTDELENIES            FROM 'DataBase/OTDELENIES.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ROADS                 FROM 'DataBase/ROADS.csv'                   DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY SCHEDULE              FROM 'DataBase/SCHEDULE.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY CARS                      FROM 'DataBase/CARS.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY DISLOCATION               FROM 'DataBase/DISLOCATON.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ORDERS                    FROM 'DataBase/ORDERS.csv'                  DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ROUTERS                   FROM 'DataBase/ROUTERS.csv'                 DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS                  FROM 'DataBase/STATIONS.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS_ROADS            FROM 'DataBase/STATIONS_ROADS.csv'          DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY STATIONS_OTDELENIES       FROM 'DataBase/STATIONS_OTDELENIES.csv'     DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY OTDELENIES                FROM 'DataBase/OTDELENIES.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ROADS                     FROM 'DataBase/ROADS.csv'                   DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY SCHEDULE                  FROM 'DataBase/SCHEDULE.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 
 --PRIMARY KEYS
 ALTER TABLE STATIONS            ADD PRIMARY KEY (station_id);
@@ -170,44 +170,53 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --LAB 2
 
 --Ex 1
---SELECT
---STATIONS_MAX.station_name, STATIONS_MAX.wait_cost max_cost,
---STATIONS_MIN.station_name, STATIONS_MIN.wait_cost min_cost
---FROM 
---    STATIONS AS STATIONS_MAX
---    INNER JOIN
---    (
---        SELECT MAX(wait_cost) max_wait_cost FROM STATIONS
---    ) AS MAX_COST ON STATIONS_MAX.wait_cost = MAX_COST.max_wait_cost
---FULL OUTER JOIN
---(
---    STATIONS AS STATIONS_MIN
---    INNER JOIN
---    (
---        SELECT MIN(wait_cost) min_wait_cost FROM STATIONS
---    ) AS MIN_COST ON STATIONS_MIN.wait_cost = MIN_COST.min_wait_cost
---) AS STATIONS_MIN ON STATIONS_MIN.station_name = STATIONS_MAX.station_name;
+--SELECT station_name, wait_cost, 'max' type_cost FROM STATIONS WHERE wait_cost=(SELECT MAX(wait_cost) FROM STATIONS)
+--UNION ALL
+--SELECT station_name, wait_cost, 'min' FROM STATIONS WHERE wait_cost=(SELECT MIN(wait_cost) FROM STATIONS);
 
 --Ex2
---SELECT GET_LOADED_WAGON.station_id, GET_LOADED_WAGON.period,
---GET_LOADED_WAGON.cars_quantity loaded_wagon, GET_UNLOADED_WAGON.cars_quantity unloaded_wagon,
---GET_UNLOADED_WAGON.cars_quantity + GET_LOADED_WAGON.cars_quantity sum_cars_quatity
---FROM DISLOCATION AS GET_LOADED_WAGON
---INNER JOIN
+--SELECT DISTINCT
+--avg_cars.id, avg_cars.avg_period, avg_cars.loaded_avg, avg_cars.unloaded_avg, foo.sum_cars
+--FROM 
 --(
---    SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 1
---) AS GET_LOADED ON GET_LOADED_WAGON.loaded_empty = GET_LOADED.loaded_empty
---LEFT JOIN
---(
---    SELECT GET_WAGON.cars_quantity, GET_WAGON.loaded_empty, GET_WAGON.id FROM DISLOCATION AS GET_WAGON
---    INNER JOIN
 --    (
---        SELECT loaded_empty FROM DISLOCATION WHERE loaded_empty = 0
---    ) AS GET_UNLOADED ON GET_WAGON.loaded_empty = GET_UNLOADED.loaded_empty
---) AS GET_UNLOADED_WAGON ON GET_LOADED_WAGON.id != GET_UNLOADED_WAGON.id
---WHERE CAST(GET_LOADED_WAGON.station_id AS TEXT) LIKE '%0%0'
---ORDER BY GET_LOADED_WAGON.wait_time DESC
---LIMIT 10;
+--        SELECT LOADED_CARS.LOADED_CARS_period avg_period, LOADED_CARS.avg loaded_avg, 
+--        UNLOADED_CARS.avg unloaded_avg, LOADED_CARS.id id FROM
+--        (
+--            (
+--                SELECT AVG(cars_quantity) avg, period LOADED_CARS_period,station_id id FROM DISLOCATION
+--                WHERE loaded_empty = 1 GROUP BY station_id, period
+--            ) AS LOADED_CARS
+--            INNER JOIN
+--            (
+--                SELECT AVG(cars_quantity) avg, period UNLOADED_CARS_period, station_id id FROM DISLOCATION
+--                WHERE loaded_empty = 0 GROUP BY station_id, period
+--            ) AS UNLOADED_CARS
+--            ON LOADED_CARS.LOADED_CARS_period = UNLOADED_CARS.UNLOADED_CARS_period AND LOADED_CARS.id = UNLOADED_CARS.id
+--        )
+--    ) AS avg_cars 
+--    INNER JOIN
+--    ( 
+--        SELECT SUM(cars_quantity) sum_cars, period SUM_CARS_period, station_id id FROM DISLOCATION GROUP BY station_id, period
+--    ) AS foo
+--    ON foo.SUM_CARS_period = avg_cars.avg_period and foo.id = avg_cars.id
+--) WHERE CAST(avg_cars.id AS TEXT) LIKE '%0%0%' AND CAST(foo.sum_cars AS TEXT) NOT LIKE '%0%' ORDER BY avg_cars.avg_period DESC;
+
+--Ex3
+--SELECT D.count, D.avg, D.period FROM
+--(
+--    (
+--        SELECT count(*), A.period FROM
+--        (
+--            SELECT count(*) as count,station_id, period FROM DISLOCATION GROUP BY period,station_id ORDER BY period,station_id
+--        ) as A GROUP BY A.period
+--    ) AS K
+--    LEFT JOIN
+--    (
+--        SELECT AVG(cars_quantity), period per FROM DISLOCATION GROUP BY period
+--    ) AS C ON K.period=C.per
+--) AS D 
+--WHERE ABS((SELECT MAX(F.avg) FROM (SELECT AVG(cars_quantity), period per FROM DISLOCATION GROUP BY period)as F) - D.avg) < 5
 
 --Ex4
 --SELECT STATIONS_UNIQUE.station_name
@@ -215,9 +224,12 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --STATIONS AS STATIONS_UNIQUE
 --LEFT JOIN
 --(
---    SELECT station_from FROM ROUTERS
+--    SELECT station_from FROM ORDERS 
 --) AS STATIONS_FROM ON STATIONS_UNIQUE.station_id = STATIONS_FROM.station_from
 --WHERE STATIONS_FROM.station_from is NULL;
+
+--SELECT station_name FROM STATIONS WHERE station_id NOT IN (SELECT station_from FROM ORDERS);
+--SELECT station_name FROM STATIONS WHERE station_id != ALL (SELECT station_from FROM ORDERS);
 
 --EX5
 --SELECT station_name, STATIONS_TO.Avg_cost
@@ -230,32 +242,37 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --WHERE STATIONS_TO.station_to IS NOT NULL;
 
 -- Ex6
---SELECT STATIONS_FROM.station_name || ' to ' || STATIONS_TO.station_name flights
---FROM
---STATIONS AS STATIONS_FROM
---INNER JOIN
+--SELECT _FROM.station_name || ' to ' ||  _TO.station_name AS flight 
+--FROM 
 --(
---    SELECT station_from FROM ROUTERS
---    INNER JOIN
---    (
---        SELECT station_id FROM DISLOCATION WHERE period > 10 AND period < 41
---    ) AS _PERIOD ON (ROUTERS.station_from = _PERIOD.station_id)
---) AS _FROM ON _FROM.station_from = STATIONS_FROM.station_id,
---STATIONS AS STATIONS_TO
---INNER JOIN
+--    SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--    WHERE station_id IN (SELECT station_to FROM ORDERS WHERE car_required > 29 AND car_required < 41)
+--) AS _TO,
 --(
---    SELECT station_to FROM ROUTERS
---    INNER JOIN
---    (
---        SELECT station_id FROM DISLOCATION WHERE period > 10 AND period < 41
---    ) AS _PERIOD ON (ROUTERS.station_from = _PERIOD.station_id)
---) AS _TO ON _TO.station_to = STATIONS_TO.station_id LIMIT 5;
+--    SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--    WHERE station_id IN (SELECT station_from FROM ORDERS WHERE car_required > 29 AND car_required < 41)
+--) AS _FROM
+--WHERE _TO.row = _FROM.row;
 
 --Ex7
---CREATE TABLE BIG (
---    count INT NOT NULL
+--CREATE TABLE BIG1 (
+--    id      INT NOT NULL,
+--    name    TEXT NOT NULL,
+--    surname TEXT NOT NULL,
+--    age     INT NOT NULL
 --);
 --
---\COPY BIG                  FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
---ALTER TABLE BIG ADD PRIMARY KEY (count);
---CREATE INDEX ON BIG (count) WITH ();
+--CREATE TABLE BIG2 (
+--    id      INT NOT NULL,
+--    name    TEXT NOT NULL,
+--    surname TEXT NOT NULL,
+--    age     INT NOT NULL
+--);
+--
+--\COPY BIG1                 FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+--\COPY BIG2                 FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+--
+--ALTER TABLE BIG1 ADD PRIMARY KEY (id);
+--ALTER TABLE BIG2 ADD PRIMARY KEY (id);
+--
+--CREATE INDEX ON BIG1 (name);
