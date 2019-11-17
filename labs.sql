@@ -1,16 +1,14 @@
 ﻿DROP TABLE IF EXISTS CARS                 CASCADE;
 DROP TABLE IF EXISTS DISLOCATION          CASCADE;
 DROP TABLE IF EXISTS ORDERS               CASCADE;
-DROP TABLE IF EXISTS ROUTERS;
 DROP TABLE IF EXISTS STATIONS             CASCADE;
 DROP TABLE IF EXISTS STATIONS_ROADS       CASCADE;
+DROP TABLE IF EXISTS SCHEDULE             CASCADE;
+DROP TABLE IF EXISTS ROUTERS;
 DROP TABLE IF EXISTS STATIONS_OTDELENIES;
 DROP TABLE IF EXISTS OTDELENIES;
 DROP TABLE IF EXISTS ROADS;
-DROP TABLE IF EXISTS SCHEDULE             CASCADE;
 DROP TABLE IF EXISTS EMPTY_CARS;
-DROP TABLE IF EXISTS BIG1;
-DROP TABLE IF EXISTS BIG2;
 
 CREATE TABLE CARS (
     car_type_id                 INT NOT NULL,
@@ -61,8 +59,8 @@ CREATE TABLE STATIONS_ROADS (
 );
 
 CREATE TABLE STATIONS_OTDELENIES (
-    station_id                 INT NOT NULL,
-    otdelenie_id               INT NOT NULL
+    station_id                  INT NOT NULL,
+    otdelenie_id                INT NOT NULL
 
 );
 
@@ -167,7 +165,7 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --Ex9
 --UPDATE STATIONS SET wait_cost = 1.2 * wait_cost WHERE min > 0; 
 
---LAB 2
+--LAB 2 
 
 --Ex 1
 --SELECT station_name, wait_cost, 'max' type_cost FROM STATIONS WHERE wait_cost=(SELECT MAX(wait_cost) FROM STATIONS)
@@ -202,21 +200,17 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --    ON foo.SUM_CARS_period = avg_cars.avg_period and foo.id = avg_cars.id
 --) WHERE CAST(avg_cars.id AS TEXT) LIKE '%0%0%' AND CAST(foo.sum_cars AS TEXT) NOT LIKE '%0%' ORDER BY avg_cars.avg_period DESC;
 
+--SELECT B.station_id, B.period, SUM(B.sum) OVER(PARTITION BY station_id, period), B.type FROM (
+--   SELECT station_id, period, AVG(cars_quantity), SUM(cars_quantity), CASE WHEN loaded_empty = 1 THEN 'загружен' ELSE 'не загружен' END AS type FROM DISLOCATION
+--   GROUP BY period, station_id, loaded_empty ORDER BY station_id
+--) AS B
+--WHERE CAST(B.station_id AS TEXT) LIKE '%0%0%' AND CAST(B.sum AS TEXT) NOT LIKE '%0%';
+
 --Ex3
---SELECT D.count, D.avg, D.period FROM
+--SELECT * FROM 
 --(
---    (
---        SELECT count(*), A.period FROM
---        (
---            SELECT count(*) as count,station_id, period FROM DISLOCATION GROUP BY period,station_id ORDER BY period,station_id
---        ) as A GROUP BY A.period
---    ) AS K
---    LEFT JOIN
---    (
---        SELECT AVG(cars_quantity), period per FROM DISLOCATION GROUP BY period
---    ) AS C ON K.period=C.per
---) AS D 
---WHERE ABS((SELECT MAX(F.avg) FROM (SELECT AVG(cars_quantity), period per FROM DISLOCATION GROUP BY period)as F) - D.avg) < 5
+--    SELECT period, AVG(cars_quantity), count(DISTINCT station_id) FROM DISLOCATION GROUP BY period
+--) as A WHERE (SELECT MAX(B.avg) FROM (SELECT period, AVG(cars_quantity), count(DISTINCT station_id) FROM DISLOCATION GROUP BY period) AS B) - A.avg < 5;
 
 --Ex4
 --SELECT STATIONS_UNIQUE.station_name
@@ -228,8 +222,8 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --) AS STATIONS_FROM ON STATIONS_UNIQUE.station_id = STATIONS_FROM.station_from
 --WHERE STATIONS_FROM.station_from is NULL;
 
---SELECT station_name FROM STATIONS WHERE station_id NOT IN (SELECT station_from FROM ORDERS);
---SELECT station_name FROM STATIONS WHERE station_id != ALL (SELECT station_from FROM ORDERS);
+--SELECT station_name FROM STATIONS WHERE station_id != ANY (SELECT id FROM A);
+--SELECT COUNT(station_name) FROM STATIONS WHERE station_id != ALL (SELECT station_from FROM ORDERS);
 
 --EX5
 --SELECT station_name, STATIONS_TO.Avg_cost
@@ -240,6 +234,8 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --    SELECT station_to, Avg_cost FROM ROUTERS WHERE Avg_cost > 7700
 --) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to
 --WHERE STATIONS_TO.station_to IS NOT NULL;
+
+--SELECT station_name FROM STATIONS WHERE station_id IN (SELECT station_to FROM ROUTERS WHERE Avg_cost > 7700);
 
 -- Ex6
 --SELECT _FROM.station_name || ' to ' ||  _TO.station_name AS flight 
@@ -253,6 +249,11 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --    WHERE station_id IN (SELECT station_from FROM ORDERS WHERE car_required > 29 AND car_required < 41)
 --) AS _FROM
 --WHERE _TO.row = _FROM.row;
+--
+--
+--SELECT DISTINCT (SELECT station_name FROM STATIONS WHERE station_id = station_from) ||'_to_'|| (SELECT station_name FROM STATIONS WHERE station_id = station_to) as flight
+--FROM STATIONS, ORDERS
+--WHERE car_required BETWEEN 29 AND 41;
 
 --Ex7
 --CREATE TABLE BIG1 (
@@ -273,6 +274,102 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --\COPY BIG2                 FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 --
 --ALTER TABLE BIG1 ADD PRIMARY KEY (id);
---ALTER TABLE BIG2 ADD PRIMARY KEY (id);
 --
 --CREATE INDEX ON BIG1 (name);
+
+--LAB 4
+
+--Ex 1
+--CREATE TABLE STATIONS_OTDELENIES_NAME AS
+--SELECT STATIONS.station_name, OTDELENIES.station_otdelenie
+--FROM STATIONS, STATIONS_OTDELENIES, OTDELENIES
+--WHERE LOWER(station_name) SIMILAR TO'(%(а|у|о|ы|и|э|я|ю|ё|е)%){4}' AND
+--STATIONS.station_id = STATIONS_OTDELENIES.station_id AND STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
+
+--Ex2
+--SELECT _FROM.station_name as start_st, _TO.station_name as stop_st, COUNT(*)
+--FROM
+--(
+-- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+-- WHERE station_id IN (SELECT station_to FROM ROUTES)
+--) _TO,
+--(
+-- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+-- WHERE station_id IN (SELECT station_from FROM ROUTES)
+--) AS _FROM
+--WHERE _TO.row = _FROM.row
+--GROUP BY _FROM.station_name, _TO.station_name;
+
+--Ex4
+--SELECT
+--COUNT(*) OVER(PARTITION BY station_name), station_name, sum, wait_time
+--FROM
+--(
+--    SELECT station_id, wait_time FROM DISLOCATION WHERE wait_time BETWEEN 0 AND 20 
+--) AS DISLOCATION
+--INNER JOIN
+--(
+--    SELECT station_id, station_name, SUM(char_length(station_name)) FROM STATIONS GROUP BY station_name, station_id
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id ORDER BY sum DESC;
+
+
+--Ex5
+--INSERT INTO STATIONS VALUES (7777, 'Горький', 1, 0, 600);
+--INSERT INTO STATIONS VALUES (337755, 'Сладкий', 0, 1, 500);
+--INSERT INTO DISLOCATION VALUES (5555, 337755, 0, 1, 1, 1, 21);
+
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--INNER JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--LEFT JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--RIGHT JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--FULL OUTER JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--CROSS JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS;
+
+--Ex6
+--DROP TABLE IF EXISTS COPY_STATIONS;
+--CREATE TABLE COPY_STATIONS AS SELECT * FROM STATIONS;
+--DELETE FROM COPY_STATIONS WHERE max IN (SELECT max FROM STATIONS GROUP BY max HAVING COUNT(max) > 1); 
