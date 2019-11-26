@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS ORDERS               CASCADE;
 DROP TABLE IF EXISTS STATIONS             CASCADE;
 DROP TABLE IF EXISTS STATIONS_ROADS       CASCADE;
 DROP TABLE IF EXISTS SCHEDULE             CASCADE;
-DROP TABLE IF EXISTS ROUTERS;
+DROP TABLE IF EXISTS ROUTES;
 DROP TABLE IF EXISTS STATIONS_OTDELENIES;
 DROP TABLE IF EXISTS OTDELENIES;
 DROP TABLE IF EXISTS ROADS;
@@ -38,7 +38,7 @@ CREATE TABLE ORDERS (
     must_do                     INT
 );
 
-CREATE TABLE ROUTERS (
+CREATE TABLE ROUTES (
     route_id                    INT NOT NULL,
     station_from                INT NOT NULL,
     station_to                  INT NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE EMPTY_CARS (
 \COPY CARS                      FROM 'DataBase/CARS.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY DISLOCATION               FROM 'DataBase/DISLOCATON.csv'              DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY ORDERS                    FROM 'DataBase/ORDERS.csv'                  DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
-\COPY ROUTERS                   FROM 'DataBase/ROUTERS.csv'                 DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+\COPY ROUTES                    FROM 'DataBase/ROUTES.csv'                 DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY STATIONS                  FROM 'DataBase/STATIONS.csv'                DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY STATIONS_ROADS            FROM 'DataBase/STATIONS_ROADS.csv'          DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
 \COPY STATIONS_OTDELENIES       FROM 'DataBase/STATIONS_OTDELENIES.csv'     DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
@@ -106,7 +106,7 @@ ALTER TABLE DISLOCATION         ADD PRIMARY KEY (id);
 ALTER TABLE ORDERS              ADD PRIMARY KEY (order_id);
 ALTER TABLE CARS                ADD PRIMARY KEY (car_type_id);
 ALTER TABLE OTDELENIES          ADD PRIMARY KEY (otdelenie_id);
-ALTER TABLE ROUTERS             ADD PRIMARY KEY (route_id);
+ALTER TABLE ROUTES              ADD PRIMARY KEY (route_id);
 ALTER TABLE STATIONS_OTDELENIES ADD PRIMARY KEY (station_id);
 ALTER TABLE ROADS               ADD PRIMARY KEY (station_road_id);
 ALTER TABLE SCHEDULE            ADD PRIMARY KEY (order_id, period);
@@ -135,7 +135,7 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --SELECT DISTINCT station_id, car_type, wait_time  FROM DISLOCATION ORDER BY wait_time DESC;
 
 --Ex4
---SELECT * FROM ROUTERS, STATIONS WHERE ROUTERS.station_from=STATIONS.station_id AND STATIONS.station_name='Бирюсинск' AND ROUTERS.Avg_cost>=7000 LIMIT 7 ;
+--SELECT * FROM ROUTES, STATIONS WHERE ROUTES.station_from=STATIONS.station_id AND STATIONS.station_name='Бирюсинск' AND ROUTES.Avg_cost>=7000 LIMIT 7 ;
 
 --Ex5
 --SELECT order_id ,revenue_per_car, car_required, NKO_loaded_run_unload FROM ORDERS WHERE car_required BETWEEN 20 AND 30 OR car_required=71 OR car_required=20;
@@ -231,11 +231,11 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --STATIONS AS STATIONS_UNIQUE
 --LEFT JOIN
 --(
---    SELECT station_to, Avg_cost FROM ROUTERS WHERE Avg_cost > 7700
+--    SELECT station_to, Avg_cost FROM ROUTES WHERE Avg_cost > 7700
 --) AS STATIONS_TO ON STATIONS_UNIQUE.station_id = STATIONS_TO.station_to
 --WHERE STATIONS_TO.station_to IS NOT NULL;
 
---SELECT station_name FROM STATIONS WHERE station_id IN (SELECT station_to FROM ROUTERS WHERE Avg_cost > 7700);
+--SELECT station_name FROM STATIONS WHERE station_id IN (SELECT station_to FROM ROUTES WHERE Avg_cost > 7700);
 
 -- Ex6
 --SELECT _FROM.station_name || ' to ' ||  _TO.station_name AS flight 
@@ -373,3 +373,252 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --DROP TABLE IF EXISTS COPY_STATIONS;
 --CREATE TABLE COPY_STATIONS AS SELECT * FROM STATIONS;
 --DELETE FROM COPY_STATIONS WHERE max IN (SELECT max FROM STATIONS GROUP BY max HAVING COUNT(max) > 1); 
+--(
+--    SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--    WHERE station_id IN (SELECT station_to FROM ORDERS WHERE car_required > 29 AND car_required < 41)
+--) AS _TO,
+--(
+--    SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--    WHERE station_id IN (SELECT station_from FROM ORDERS WHERE car_required > 29 AND car_required < 41)
+--) AS _FROM
+--WHERE _TO.row = _FROM.row;
+--
+--
+--SELECT DISTINCT (SELECT station_name FROM STATIONS WHERE station_id = station_from) ||'_to_'|| (SELECT station_name FROM STATIONS WHERE station_id = station_to) as flight
+--FROM STATIONS, ORDERS
+--WHERE car_required BETWEEN 29 AND 41;
+
+--Ex7
+--CREATE TABLE BIG1 (
+--    id      INT NOT NULL,
+--    name    TEXT NOT NULL,
+--    surname TEXT NOT NULL,
+--    age     INT NOT NULL
+--);
+--
+--CREATE TABLE BIG2 (
+--    id      INT NOT NULL,
+--    name    TEXT NOT NULL,
+--    surname TEXT NOT NULL,
+--    age     INT NOT NULL
+--);
+--
+--\COPY BIG1                 FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+--\COPY BIG2                 FROM 'DataBase/BIG.csv'                    DELIMITER ';' ENCODING 'WIN1251' CSV HEADER;
+--
+--ALTER TABLE BIG1 ADD PRIMARY KEY (id);
+--
+--CREATE INDEX ON BIG1 (name);
+
+--LAB 4
+
+--Ex 1
+--CREATE TABLE STATIONS_OTDELENIES_NAME AS
+--SELECT STATIONS.station_name, OTDELENIES.station_otdelenie
+--FROM STATIONS, STATIONS_OTDELENIES, OTDELENIES
+--WHERE LOWER(station_name) SIMILAR TO'(%(а|у|о|ы|и|э|я|ю|ё|е)%){4}' AND
+--STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
+--STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
+
+--Ex2
+--SELECT _FROM.station_name as start_st, _TO.station_name as stop_st, COUNT(*)
+--FROM
+--(
+-- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+-- WHERE station_id IN (SELECT station_to FROM ROUTES)
+--) _TO,
+--(
+-- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+-- WHERE station_id IN (SELECT station_from FROM ROUTES)
+--) AS _FROM
+--WHERE _TO.row = _FROM.row
+--GROUP BY _FROM.station_name, _TO.station_name;
+
+--Ex4
+--SELECT
+--COUNT(*) OVER(PARTITION BY station_name), station_name, sum, wait_time
+--FROM
+--(
+--    SELECT station_id, wait_time FROM DISLOCATION WHERE wait_time BETWEEN 0 AND 20 
+--) AS DISLOCATION
+--INNER JOIN
+--(
+--    SELECT station_id, station_name, SUM(char_length(station_name)) FROM STATIONS GROUP BY station_name, station_id
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id ORDER BY sum DESC;
+
+
+--Ex5
+--INSERT INTO STATIONS VALUES (7777, 'Горький', 1, 0, 600);
+--INSERT INTO STATIONS VALUES (337755, 'Сладкий', 0, 1, 500);
+--INSERT INTO DISLOCATION VALUES (5555, 337755, 0, 1, 1, 1, 21);
+
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--INNER JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--LEFT JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--RIGHT JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--FULL OUTER JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS
+--ON DISLOCATION.station_id = STATIONS.station_id;
+
+--SELECT * FROM 
+--(
+--    SELECT * FROM DISLOCATION
+--) AS DISLOCATION
+--CROSS JOIN
+--(
+--    SELECT * FROM STATIONS
+--) AS STATIONS;
+
+--Ex6
+--DROP TABLE IF EXISTS COPY_STATIONS;
+--CREATE TABLE COPY_STATIONS AS SELECT * FROM STATIONS;
+--DELETE FROM COPY_STATIONS WHERE max IN (SELECT max FROM STATIONS GROUP BY max HAVING COUNT(max) > 1); 
+
+--Ex7
+--SELECT * FROM 
+--(
+--    SELECT ROW_NUMBER() OVER (PARTITION BY STATIONS.station_id ORDER BY STATIONS.station_id) AS row, 
+--    STATIONS.station_id, STATIONS.station_to, STATIONS.station_from,
+--    CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--    FROM
+--    (
+--        (
+--            SELECT station_to, station_from, must_do FROM ORDERS
+--        ) AS ORDERS
+--        JOIN 
+--        (
+--            SELECT station_id FROM DISLOCATION 
+--        ) AS STATIONS 
+--        ON station_id = station_from
+--    ) AS STATIONS
+--    INNER JOIN
+--    (
+--        SELECT * FROM ROUTES ORDER BY Avg_cost
+--    ) AS ROUTES
+--    ON STATIONS.station_id = ROUTES.station_to
+--) AS RESULT
+--WHERE RESULT.row <= 5;
+
+--Ex8
+--SELECT COUNT(*), R.station_id, STATIONS.station_name FROM
+--(
+--    SELECT * FROM 
+--    (
+--        SELECT ROW_NUMBER() OVER (PARTITION BY STATIONS.station_id ORDER BY STATIONS.station_id) AS row, 
+--        STATIONS.station_id
+--        FROM
+--        (
+--            (
+--                SELECT station_to, station_from, must_do FROM ORDERS
+--            ) AS ORDERS
+--            JOIN 
+--            (
+--                SELECT station_id FROM DISLOCATION 
+--            ) AS STATIONS 
+--            ON station_id = station_from
+--        ) AS STATIONS
+--        INNER JOIN
+--        (
+--            SELECT * FROM ROUTES ORDER BY Avg_cost
+--        ) AS ROUTES
+--        ON STATIONS.station_id = ROUTES.station_to
+--    ) AS RESULT
+--    WHERE RESULT.row <= 5
+--) AS R, STATIONS
+--WHERE R.station_id = STATIONS.station_id
+--GROUP BY R.station_id, STATIONS.station_name
+--ORDER BY R.station_id;
+
+--Ex9
+--SELECT * FROM 
+--(
+--    SELECT ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row, 
+--    ORDERS.station_from,
+--    CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--    FROM
+--    (
+--        SELECT station_to, station_from, must_do FROM ORDERS
+--    ) AS ORDERS
+--    INNER JOIN
+--    (
+--        SELECT * FROM ROUTES ORDER BY Avg_cost
+--    ) AS ROUTES
+--    ON ORDERS.station_from = ROUTES.station_to AND ORDERS.station_to = ROUTES.station_from
+--) AS RESULT
+--WHERE RESULT.row <= 5;
+
+--Ex10
+--SELECT R.row, R.station_from, STATIONS.station_name FROM 
+--(
+--    SELECT * FROM
+--    (
+--        SELECT ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row, 
+--        ORDERS.station_from, ORDERS.station_to,
+--        CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--        FROM
+--        (
+--            SELECT station_to, station_from, must_do FROM ORDERS
+--        ) AS ORDERS
+--        INNER JOIN
+--        (
+--            SELECT * FROM ROUTES ORDER BY Avg_cost
+--        ) AS ROUTES
+--        ON ORDERS.station_from = ROUTES.station_to AND ORDERS.station_to = ROUTES.station_from
+--    ) AS RESULT
+--    WHERE RESULT.row <= 5
+--) AS R, STATIONS
+--WHERE R.station_to = STATIONS.station_id
+--ORDER BY R.station_from;
+
+--Ex11
+--SELECT * FROM 
+--(
+--    SELECT * FROM 
+--    (
+--        SELECT DISLOCATION.station_id, station_to, station_from,
+--        SELECT ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row, 
+--        CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--        FROM DISLOCATION, ORDERS, ROUTES
+--        WHERE
+--        DISLOCATION.station_id = ROUTES.station_to AND
+--        (ORDERS.station_to = ROUTES.station_from OR
+--        ORDERS.station_id = 
+--        GROUP BY station_id, station_to, station_from
+--        HAVING COUNT(*) <= 5
+--        ORDER BY station_id
+--    ) AS R
+--) AS R WHERE R.case = 'обязательная';
