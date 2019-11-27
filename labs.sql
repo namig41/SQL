@@ -287,18 +287,43 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --STATIONS.station_id = STATIONS_OTDELENIES.station_id AND STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
 
 --Ex2
---SELECT _FROM.station_name as start_st, _TO.station_name as stop_st, COUNT(*)
+--SELECT R.station_otdelenie name_road_otdel, R.station_name name_station 
 --FROM
 --(
--- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
--- WHERE station_id IN (SELECT station_to FROM ROUTES)
---) _TO,
+--    SELECT ROW_NUMBER() OVER (PARTITION BY station_otdelenie) count, station_otdelenie, station_name
+--    FROM
+--    (
+--        SELECT station_id, station_name FROM STATIONS
+--    ) AS STATIONS, OTDELENIES, STATIONS_OTDELENIES
+--    WHERE
+--    STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
+--    OTDELENIES.otdelenie_id = STATIONS_OTDELENIES.otdelenie_id
+--) AS R
+--WHERE R.count <= 2
+--UNION ALL
+--SELECT R.station_otdelenie, station_name
+--FROM
 --(
--- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
--- WHERE station_id IN (SELECT station_from FROM ROUTES)
---) AS _FROM
---WHERE _TO.row = _FROM.row
---GROUP BY _FROM.station_name, _TO.station_name;
+--    SELECT ROW_NUMBER() OVER (PARTITION BY station_otdelenie) count, station_otdelenie, station_name
+--    FROM
+--    (
+--        SELECT station_id, station_name FROM STATIONS
+--    ) AS STATIONS, ROADS, STATIONS_ROADS 
+--    WHERE
+--    STATIONS.station_id = STATIONS_ROADS.station_id AND
+--    ROADS.station_road_id = STATIONS_ROADS.station_road_id
+--) AS R
+--WHERE R.count <= 2;
+
+--Ex3
+SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
+(
+    SELECT station_id FROM STATIONS
+
+) AS STATIONS
+INNER JOIN
+ROUTES 
+ON station_id = station_to OR station_id = station_from;
 
 --Ex4
 --SELECT
