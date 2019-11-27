@@ -316,14 +316,14 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --WHERE R.count <= 2;
 
 --Ex3
-SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
-(
-    SELECT station_id FROM STATIONS
-
-) AS STATIONS
-INNER JOIN
-ROUTES 
-ON station_id = station_to OR station_id = station_from;
+--SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
+--(
+--    SELECT station_id FROM STATIONS
+--
+--) AS STATIONS
+--INNER JOIN
+--ROUTES 
+--ON station_id = station_to OR station_id = station_from;
 
 --Ex4
 --SELECT
@@ -628,22 +628,3 @@ ON station_id = station_to OR station_id = station_from;
 --) AS R, STATIONS
 --WHERE R.station_to = STATIONS.station_id
 --ORDER BY R.station_from;
-
---Ex11
---SELECT * FROM 
---(
---    SELECT * FROM 
---    (
---        SELECT DISLOCATION.station_id, station_to, station_from,
---        SELECT ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row, 
---        CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
---        FROM DISLOCATION, ORDERS, ROUTES
---        WHERE
---        DISLOCATION.station_id = ROUTES.station_to AND
---        (ORDERS.station_to = ROUTES.station_from OR
---        ORDERS.station_id = 
---        GROUP BY station_id, station_to, station_from
---        HAVING COUNT(*) <= 5
---        ORDER BY station_id
---    ) AS R
---) AS R WHERE R.case = 'обязательная';
