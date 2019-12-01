@@ -280,11 +280,15 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --LAB 4
 
 --Ex 1
+--DROP TABLE STATIONS_OTDELENIES_NAME;
+--
 --CREATE TABLE STATIONS_OTDELENIES_NAME AS
 --SELECT STATIONS.station_name, OTDELENIES.station_otdelenie
 --FROM STATIONS, STATIONS_OTDELENIES, OTDELENIES
---WHERE LOWER(station_name) SIMILAR TO'(%(а|у|о|ы|и|э|я|ю|ё|е)%){4}' AND
---STATIONS.station_id = STATIONS_OTDELENIES.station_id AND STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
+--WHERE
+--LOWER(station_name) SIMILAR TO '([бвгджзйклмнпрстфхцчшщ]*[ауоыиэяюёе][бвгджзйклмнпрстфхцчшщ]*[\d\-\(]*){4}' AND
+--STATIONS.station_id = STATIONS_OTDELENIES.station_id
+--AND STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
 
 --Ex2
 --SELECT R.station_otdelenie name_road_otdel, R.station_name name_station 
@@ -316,14 +320,17 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --WHERE R.count <= 2;
 
 --Ex3
---SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
+--SELECT * FROM 
 --(
---    SELECT station_id FROM STATIONS
+--    SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
+--    (
+--        SELECT station_id FROM STATIONS
 --
---) AS STATIONS
---INNER JOIN
---ROUTES 
---ON station_id = station_to OR station_id = station_from;
+--    ) AS STATIONS
+--    INNER JOIN
+--    ROUTES 
+--    ON station_id = station_to OR station_id = station_from
+--) AS R ORDER BY R.count LIMIT 5; 
 
 --Ex4
 --SELECT
@@ -449,12 +456,12 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --SELECT _FROM.station_name as start_st, _TO.station_name as stop_st, COUNT(*)
 --FROM
 --(
--- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
--- WHERE station_id IN (SELECT station_to FROM ROUTES)
+--     SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--     WHERE station_id IN (SELECT station_to FROM ROUTES)
 --) _TO,
 --(
--- SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
--- WHERE station_id IN (SELECT station_from FROM ROUTES)
+--     SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
+--     WHERE station_id IN (SELECT station_from FROM ROUTES)
 --) AS _FROM
 --WHERE _TO.row = _FROM.row
 --GROUP BY _FROM.station_name, _TO.station_name;
@@ -589,7 +596,7 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --ORDER BY R.station_id;
 
 --Ex9
---SELECT * FROM 
+--SELECT RESULT.station_from, RESULT.case as type FROM 
 --(
 --    SELECT ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row, 
 --    ORDERS.station_from,
@@ -599,9 +606,7 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --        SELECT station_to, station_from, must_do FROM ORDERS
 --    ) AS ORDERS
 --    INNER JOIN
---    (
---        SELECT * FROM ROUTES ORDER BY Avg_cost
---    ) AS ROUTES
+--    ROUTES
 --    ON ORDERS.station_from = ROUTES.station_to AND ORDERS.station_to = ROUTES.station_from
 --) AS RESULT
 --WHERE RESULT.row <= 5;
@@ -619,12 +624,25 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --            SELECT station_to, station_from, must_do FROM ORDERS
 --        ) AS ORDERS
 --        INNER JOIN
---        (
---            SELECT * FROM ROUTES ORDER BY Avg_cost
---        ) AS ROUTES
+--        ROUTES
 --        ON ORDERS.station_from = ROUTES.station_to AND ORDERS.station_to = ROUTES.station_from
 --    ) AS RESULT
 --    WHERE RESULT.row <= 5
 --) AS R, STATIONS
 --WHERE R.station_to = STATIONS.station_id
 --ORDER BY R.station_from;
+
+--Ex11
+--SELECT order_id FROM ORDERS WHERE must_do = 1
+--UNION ALL
+--SELECT * 
+--FROM 
+--(
+--    SELECT route_id, station_from, station_to FROM ROUTES
+--    WHERE route_id NOT IN (SELECT order_id FROM ORDERS WHERE must_do = 1)
+--) AS ROUTES 
+--INNER JOIN
+--(
+--    SELECT id, station_id FROM DISLOCATION
+--) AS DISLOCATION
+--ON ROUTES.route_id = DISLOCATION.id;
