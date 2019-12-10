@@ -330,7 +330,7 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --    INNER JOIN
 --    ROUTES 
 --    ON station_id = station_to OR station_id = station_from
---) AS R ORDER BY R.count LIMIT 5; 
+--) AS R ORDER BY R.count;
 
 --Ex4
 --SELECT
@@ -445,26 +445,103 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --LAB 4
 
 --Ex 1
+--DROP TABLE STATIONS_OTDELENIES_NAME;
+--
 --CREATE TABLE STATIONS_OTDELENIES_NAME AS
---SELECT STATIONS.station_name, OTDELENIES.station_otdelenie
---FROM STATIONS, STATIONS_OTDELENIES, OTDELENIES
---WHERE LOWER(station_name) SIMILAR TO'(%(а|у|о|ы|и|э|я|ю|ё|е)%){4}' AND
---STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
---STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
-
+--SELECT
+--    STATIONS.station_name, OTDELENIES.station_otdelenie
+--FROM
+--    STATIONS, STATIONS_OTDELENIES, OTDELENIES
+--WHERE
+--    LOWER(station_name) SIMILAR TO'([бвгджзйклмнпрстфхцчшщ]*[ауоыиэяюёе][бвгджзйклмнпрстфхцчшщ]*[\-\(]*){4}' AND
+--    STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
+--    STATIONS_OTDELENIES.otdelenie_id = OTDELENIES.otdelenie_id;
+--
 --Ex2
---SELECT _FROM.station_name as start_st, _TO.station_name as stop_st, COUNT(*)
+--SELECT
+--    R.station_otdelenie name_road_otdel, R.station_name name_station 
 --FROM
 --(
---     SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
---     WHERE station_id IN (SELECT station_to FROM ROUTES)
---) _TO,
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY station_otdelenie) count, station_otdelenie, station_name
+--    FROM
+--    (
+--        SELECT station_id, station_name FROM STATIONS
+--    ) AS STATIONS, OTDELENIES, STATIONS_OTDELENIES
+--    WHERE
+--        STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
+--        OTDELENIES.otdelenie_id = STATIONS_OTDELENIES.otdelenie_id
+--) AS R
+--WHERE R.count <= 2
+--UNION ALL
+--SELECT
+--    R.station_otdelenie, station_name
+--FROM
 --(
---     SELECT ROW_NUMBER() OVER(ORDER BY station_name) AS row, station_name FROM STATIONS
---     WHERE station_id IN (SELECT station_from FROM ROUTES)
---) AS _FROM
---WHERE _TO.row = _FROM.row
---GROUP BY _FROM.station_name, _TO.station_name;
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY station_otdelenie) count, station_otdelenie, station_name
+--    FROM
+--    (
+--        SELECT station_id, station_name FROM STATIONS
+--    ) AS STATIONS, ROADS, STATIONS_ROADS 
+--    WHERE
+--        STATIONS.station_id = STATIONS_ROADS.station_id AND
+--        ROADS.station_road_id = STATIONS_ROADS.station_road_id
+--) AS R
+--WHERE R.count <= 2;
+
+SELECT RRESULT.otdel, RRESULT.road, RRESULT.station_name, RRESULT.num FROM
+(
+    SELECT ROW_NUMBER() OVER(PARTITION BY RESULT.otdel, RESULT.road) as count,
+    RESULT.otdel, RESULT.road, RESULT.station_name_otdel station_name,
+    COUNT(*) OVER(ORDER BY RESULT.otdel, RESULT.road) as num
+    FROM
+    (
+        (
+            SELECT * FROM    
+            (
+                SELECT
+                    station_otdelenie as otdel, station_name as station_name_otdel
+                FROM
+                (
+                    SELECT station_id, station_name FROM STATIONS
+                ) AS STATIONS, ROADS, STATIONS_ROADS 
+                WHERE
+                    STATIONS.station_id = STATIONS_ROADS.station_id AND
+                    ROADS.station_road_id = STATIONS_ROADS.station_road_id
+            ) AS O
+        ) AS O 
+        INNER JOIN
+        (
+            SELECT * FROM 
+            (
+                SELECT
+                    station_otdelenie as road, station_name as station_name_road
+                FROM
+                (
+                    SELECT station_id, station_name FROM STATIONS
+                ) AS STATIONS, OTDELENIES, STATIONS_OTDELENIES
+                WHERE
+                    STATIONS.station_id = STATIONS_OTDELENIES.station_id AND
+                    OTDELENIES.otdelenie_id = STATIONS_OTDELENIES.otdelenie_id
+            ) AS R    
+        ) AS R
+        ON R.station_name_road = O.station_name_otdel
+    ) AS RESULT
+) AS RRESULT WHERE RRESULT.count <= 2;
+
+--Ex3
+--SELECT * FROM 
+--(
+--    SELECT station_to start_st, station_from finish_st, COUNT(station_id) OVER(PARTITION BY station_to) FROM 
+--    (
+--        SELECT station_id FROM STATIONS
+--
+--    ) AS STATIONS
+--    INNER JOIN
+--    ROUTES 
+--    ON station_id = station_to OR station_id = station_from
+--) AS R ORDER BY R.count LIMIT 5;
 
 --Ex4
 --SELECT
@@ -633,16 +710,179 @@ ALTER TABLE STATIONS_OTDELENIES ADD FOREIGN KEY (otdelenie_id)      REFERENCES O
 --ORDER BY R.station_from;
 
 --Ex11
---SELECT order_id FROM ORDERS WHERE must_do = 1
---UNION ALL
---SELECT * 
+--SELECT station_id, station_from, station_to 
+--FROM
+--(
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY station_id ORDER BY station_id) AS row,
+--        station_id, ROUTES.station_from, ROUTES.station_to
+--    FROM
+--    (
+--        SELECT DISTINCT
+--            station_id, station_from, station_to
+--        FROM
+--        (
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to 
+--            FROM
+--                ORDERS
+--            WHERE
+--                ORDERS.must_do = 1
+--            EXCEPT 
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to
+--            FROM
+--                ORDERS, ROUTES
+--            WHERE
+--                ORDERS.station_from = ROUTES.station_from AND
+--                ORDERS.station_to = ROUTES.station_from AND
+--                ORDERS.must_do = 1
+--        ) AS ORDERS, DISLOCATION
+--        WHERE
+--            DISLOCATION.station_id = ORDERS.station_from OR
+--            DISLOCATION.station_id = ORDERS.station_to
+--    ) AS DISLOCATION, ROUTES
+--    WHERE
+--        DISLOCATION.station_id = DISLOCATION.station_to AND
+--        DISLOCATION.station_from = ROUTES.station_to
+--        OR
+--        DISLOCATION.station_id = DISLOCATION.station_from AND
+--        DISLOCATION.station_to = ROUTES.station_from
+--) AS DISLOCATION
+--WHERE
+--    row <= 5;
+
+--Ex12
+--SELECT row count, station_id, station_from, station_to 
+--FROM
+--(
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY station_id ORDER BY station_id) AS row,
+--        station_id, ROUTES.station_from, ROUTES.station_to
+--    FROM
+--    (
+--        SELECT DISTINCT
+--            station_id, station_from, station_to
+--        FROM
+--        (
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to 
+--            FROM
+--                ORDERS
+--            WHERE
+--                ORDERS.must_do = 1
+--            EXCEPT 
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to
+--            FROM
+--                ORDERS, ROUTES
+--            WHERE
+--                ORDERS.station_from = ROUTES.station_from AND
+--                ORDERS.station_to = ROUTES.station_from AND
+--                ORDERS.must_do = 1
+--        ) AS ORDERS, DISLOCATION
+--        WHERE
+--            DISLOCATION.station_id = ORDERS.station_from OR
+--            DISLOCATION.station_id = ORDERS.station_to
+--    ) AS DISLOCATION, ROUTES
+--    WHERE
+--        DISLOCATION.station_id = DISLOCATION.station_to AND
+--        DISLOCATION.station_from = ROUTES.station_to
+--        OR
+--        DISLOCATION.station_id = DISLOCATION.station_from AND
+--        DISLOCATION.station_to = ROUTES.station_from
+--) AS DISLOCATION
+--WHERE
+--    row <= 5;
+
+--Ex13 (7, 9, 11)
+--SELECT
+--    RESULT.station_id, RESULT.station_to, RESULT.station_from  pp
 --FROM 
 --(
---    SELECT route_id, station_from, station_to FROM ROUTES
---    WHERE route_id NOT IN (SELECT order_id FROM ORDERS WHERE must_do = 1)
---) AS ROUTES 
---INNER JOIN
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY DISLOCATION.station_id ORDER BY DISLOCATION.station_id) AS row, 
+--        DISLOCATION.station_id, DISLOCATION.station_to, DISLOCATION.station_from,
+--    CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--    FROM
+--    (
+--        (
+--            SELECT station_to, station_from, must_do FROM ORDERS
+--        ) AS ORDERS
+--        JOIN 
+--        (
+--            SELECT station_id FROM DISLOCATION 
+--        ) AS DISLOCATION 
+--        ON station_id = station_from
+--    ) AS DISLOCATION
+--    INNER JOIN
+--    (
+--        SELECT * FROM ROUTES ORDER BY Avg_cost
+--    ) AS ROUTES
+--    ON DISLOCATION.station_id = ROUTES.station_to
+--) AS RESULT
+--WHERE
+--    RESULT.row <= 5
+--UNION
+--SELECT
+--    RESULT.order_id, RESULT.station_to, RESULT.station_from 
+--FROM
 --(
---    SELECT id, station_id FROM DISLOCATION
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY ORDERS.station_from ORDER BY ORDERS.station_from) AS row,
+--        ORDERS.station_to, ORDERS.station_from, ORDERS.order_id,
+--        CASE WHEN must_do = 1 THEN 'обязательная' ELSE 'необязательная' END
+--    FROM
+--    (
+--        SELECT order_id, station_to, station_from, must_do FROM ORDERS
+--    ) AS ORDERS
+--    INNER JOIN
+--    ROUTES ON 
+--        ORDERS.station_from = ROUTES.station_to AND 
+--        ORDERS.station_to = ROUTES.station_from
+--) AS RESULT
+--WHERE
+--    RESULT.row <= 5
+--UNION
+--SELECT
+--    station_id, station_from, station_to 
+--FROM
+--(
+--    SELECT
+--        ROW_NUMBER() OVER (PARTITION BY station_id ORDER BY station_id) AS row,
+--        station_id, ROUTES.station_from, ROUTES.station_to
+--    FROM
+--    (
+--        SELECT DISTINCT
+--            station_id, station_from, station_to
+--        FROM
+--        (
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to 
+--            FROM
+--                ORDERS
+--            WHERE
+--                ORDERS.must_do = 1
+--            EXCEPT 
+--            SELECT
+--                ORDERS.station_from, ORDERS.station_to
+--            FROM
+--                ORDERS, ROUTES
+--            WHERE
+--                ORDERS.station_from = ROUTES.station_from AND
+--                ORDERS.station_to = ROUTES.station_from AND
+--                ORDERS.must_do = 1
+--        ) AS ORDERS, DISLOCATION
+--        WHERE
+--            DISLOCATION.station_id = ORDERS.station_from OR
+--            DISLOCATION.station_id = ORDERS.station_to
+--    ) AS DISLOCATION, ROUTES
+--    WHERE
+--        DISLOCATION.station_id = DISLOCATION.station_to AND
+--        DISLOCATION.station_from = ROUTES.station_to
+--        OR
+--        DISLOCATION.station_id = DISLOCATION.station_from AND
+--        DISLOCATION.station_to = ROUTES.station_from
 --) AS DISLOCATION
---ON ROUTES.route_id = DISLOCATION.id;
+--WHERE
+--    row <= 5 ORDER BY station_id DESC;
